@@ -4,8 +4,8 @@ from socket import *
 from select import select
 import sys
 
-HOST = '127.0.0.1'
-PORT = 56789
+HOST = '115.68.27.153'
+PORT = 50010
 BUFSIZE = 1024
 ADDR = (HOST, PORT)
 
