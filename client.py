@@ -2,7 +2,7 @@
 
 from socket import *
 from select import select
-from multiprocessing import Process, Queue
+import threading
 import sys
 
 HOST = '115.68.27.153'
@@ -21,40 +21,51 @@ except Exception:
 	sys.exit()
 print("서버 연결 성공")
 
-def dataSend():
-        message = sys.stdin.readline()
-        clientSocket.send(message.encode())
+isConnect = True
 
-def dataRecv(queue):
-        while True:
-                read_socket, write_socket, error_socket = select([clientSocket], [], [], 10)
+def dataSend():
+        global isConnect
+        
+        while True:                
+                if not isConnect:
+                        return
+                
+                message = sys.stdin.readline()
+                
+                if (message == 'q\n') or (message == 'Q\n'):
+                        isConnect = False
+                        return
+                
+                clientSocket.send(message.encode())
+
+def dataRecv():
+        global isConnect
+        
+        while True:  
+                if not isConnect:
+                        return
+                
+                read_socket, write_socket, error_socket = select([clientSocket], [], [], 0.1)
 
                 if read_socket == [clientSocket]:
                         data = clientSocket.recv(BUFSIZE)
 
-if __name__ == "__main__":
-        queue = Queue()
-        p = Process(target = dataRecv, args = (queue,))
-        p.start()
+                        if not data:
+                                print("서버 (%s : %s) 연결 끊김" % ADDR)
+                                isConnection = False
+                                return
 
-        while True:
-                try:
-                        dataSend()
-
-                        if queue.qsize() > 0:
-                                data = queue.get()
+                        else:
                                 print(data)
-                                
-                                if not data:
-                                        print("서버 (%s : %s) 와의 연결 끊김." % ADDR)
-                                        p.join()
-                                        clientSocket.close()
-                                        sys.exit()
 
-                                else:
-                                        pass
+th1 = threading.Thread(target = dataSend, args = ())
+th2 = threading.Thread(target = dataRecv, args = ())
+        
+th1.start()
+th2.start()
 
-                except KeyboardInterrupt:
-                        p.join()
-                        clientSocket.close()
-                        sys.exit()
+th1.join()
+th2.join()
+
+clientSocket.close()
+sys.exit()
