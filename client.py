@@ -1,68 +1,64 @@
-# -*- coding: utf-8 -*-
+# -*- coding: cp949 -*-
 
 from socket import *
 from select import select
 import threading
 import sys
+import wx, gui
 
 HOST = '115.68.27.153'
 PORT = 50010
 BUFSIZE = 1024
 ADDR = (HOST, PORT)
 
-# ì†Œì¼“ ìƒì„±
+# ¼ÒÄÏ »ı¼º
 clientSocket = socket(AF_INET, SOCK_STREAM)
 
-# ì„œë²„ ì—°ê²° ì‹œë„
+# ¼­¹ö ¿¬°á ½Ãµµ
 try:
 	clientSocket.connect(ADDR)
 except Exception:
-	print("ì„œë²„ ì—°ê²° ì‹¤íŒ¨")
+	print("¼­¹ö ¿¬°á ½ÇÆĞ")
 	sys.exit()
-print("ì„œë²„ ì—°ê²° ì„±ê³µ")
+print("¼­¹ö ¿¬°á ¼º°ø")
 
 isConnect = True
 
 def dataSend():
         global isConnect
         
-        while True:                
-                if not isConnect:
-                        return
-                
-                message = sys.stdin.readline()
-                
-                if (message == 'q\n') or (message == 'Q\n'):
-                        isConnect = False
-                        return
-                
-                clientSocket.send(message.encode())
+        while isConnect:
+                pass
 
 def dataRecv():
         global isConnect
         
-        while True:  
-                if not isConnect:
-                        return
-                
+        while isConnect:
                 read_socket, write_socket, error_socket = select([clientSocket], [], [], 0.1)
-
+                
                 if read_socket == [clientSocket]:
                         data = clientSocket.recv(BUFSIZE)
-
+                        
                         if not data:
-                                print("ì„œë²„ (%s : %s) ì—°ê²° ëŠê¹€" % ADDR)
+                                print("¼­¹ö (%s : %s) ¿¬°á ²÷±è" % ADDR)
                                 isConnection = False
                                 return
-
+                        
                         else:
                                 print(data)
 
 th1 = threading.Thread(target = dataSend, args = ())
 th2 = threading.Thread(target = dataRecv, args = ())
-        
+
 th1.start()
 th2.start()
+
+app = wx.App(redirect = True)
+top = gui.Frame("Client")
+top.Show()
+app.MainLoop()
+
+isConnect = False
 
 th1.join()
 th2.join()
