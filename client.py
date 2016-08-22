@@ -47,16 +47,17 @@ def dataRecv():
                         else:
                                 print(data)
 
+app = wx.App(redirect = True)
+top = gui.Frame("Client")
+top.Show()
+app.MainLoop()
+
+# 쓰레드에 데이터 수신, 발신 함수 할당
 th1 = threading.Thread(target = dataSend, args = ())
 th2 = threading.Thread(target = dataRecv, args = ())
 
 th1.start()
 th2.start()
-
-app = wx.App(redirect = True)
-top = gui.Frame("Client")
-top.Show()
-app.MainLoop()
 
 isConnect = False
 
