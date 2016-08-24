@@ -2,67 +2,65 @@
 
 from socket import *
 from select import select
+import imgProcess
 import threading
 import sys
-import wx, gui
 
-HOST = '115.68.27.153'
+HOST = '104.214.146.144'
 PORT = 50010
 BUFSIZE = 1024
 ADDR = (HOST, PORT)
 
-# 소켓 생성
-clientSocket = socket(AF_INET, SOCK_STREAM)
-
-# 서버 연결 시도
-try:
-	clientSocket.connect(ADDR)
-except Exception:
-	print("서버 연결 실패")
-	sys.exit()
-print("서버 연결 성공")
-
-isConnect = True
-
-def dataSend():
-        global isConnect
+class Client():
+        isConnect = True
         
-        while isConnect:
-                pass
+        def __init__(self):
+                # 소켓 생성
+                self.clientSocket = socket(AF_INET, SOCK_STREAM)
 
-def dataRecv():
-        global isConnect
-        
-        while isConnect:
-                read_socket, write_socket, error_socket = select([clientSocket], [], [], 0.1)
-                
-                if read_socket == [clientSocket]:
-                        data = clientSocket.recv(BUFSIZE)
+
+                # 서버 연결 시도
+                try:
+                        self.clientSocket.connect(ADDR)
                         
-                        if not data:
-                                print("서버 (%s : %s) 연결 끊김" % ADDR)
-                                isConnection = False
-                                return
-                        
-                        else:
-                                print(data)
+                except Exception:
+                        self.isConnect = False
 
-app = wx.App(redirect = True)
-top = gui.Frame("Client")
-top.Show()
-app.MainLoop()
+        def imgSend(self, img, imgName):
+                self.clientSocket.send(imgProcess.imgToString(img, imgName))
 
-# 쓰레드에 데이터 수신, 발신 함수 할당
-th1 = threading.Thread(target = dataSend, args = ())
-th2 = threading.Thread(target = dataRecv, args = ())
+        def dataSend(self, str):
+                self.clientSocket.send(str)
 
-th1.start()
-th2.start()
+        def dataRecv(self):
+                data = self.clientSocket.recv(BUFSIZE)
 
-isConnect = False
+                if data.split("*")[0] == "image":
+                        imgName = data.split("*")[1]
+                        imgLen = data.split("*")[2]
+                        imgData = data[int(len(imgLen)) + int(len(imgName)) + 8:]
 
-th1.join()
-th2.join()
+                        imgData = self.revall(imgData, self.clientSocket, int(imgLen) - len(imgData))
 
-clientSocket.close()
-sys.exit()
+                        return imgData
+
+                else:
+                        return data
+
+        def revall(self, buf, sock, count):
+                while count:
+                        newbuf = sock.recv(count)
+
+                        if not newbuf:
+                                return None
+
+                        buf += newbuf
+                        count -= len(newbuf)
+
+                return buf
+
+        def __del__(self):
+                if self.isConnect:
+                        self.isConnect = False
+                        self.clientSocket.close()
+

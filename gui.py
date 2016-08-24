@@ -1,19 +1,8 @@
-# -*- coding: utf-8 -*-
-
-import wx
-
-class Frame(wx.Frame):
-    def __init__(self, title):
-        wx.Frame.__init__(self, None, title = title, size = (350, 200))
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-        
-    def OnClose(self, event):
-        dlg = wx.MessageDialog(self, "Confirm Exit", "Close?", wx.OK | wx.CANCEL | wx.ICON_QUESTION)
-        result = dlg.ShowModal()# -*- coding: cp949 -*-
+# -*- coding: cp949 -*-
 
 import wx
 import os, sys
-import imgProcess
+import imgProcess, imgEdit
 import client
 
 class MyFrame(wx.Frame):
@@ -22,42 +11,44 @@ class MyFrame(wx.Frame):
     def __init__(self, parent, id, title):
         wx.Frame.__init__(self, parent, id, "SeokJun Handsome", wx.DefaultPosition, wx.Size(1000,800))
 
-        # ë©”ë‰´ë°” ìƒì„±
+        # ¸Ş´º¹Ù »ı¼º
         self.CreateStatusBar()
         menuBar = wx.MenuBar()
 
-        # ë©”ë‰´ ìƒì„±
+        # ¸Ş´º »ı¼º
         file = wx.Menu()
         server = wx.Menu()
         help = wx.Menu()
+        edit = wx.Menu()
         
-        # file ë©”ë‰´ì— ì¶”ê°€
+        # file ¸Ş´º¿¡ Ãß°¡
         file.Append(101, "&Open", "Open a file")
         file.Append(102, "&Save", "Save a file")
-        file.AppendSeparator() # êµ¬ë¶„ì„ 
-        file.Append(103, "&Edit", "Edit a file")
-        
-        # server ë©”ë‰´ì— ì¶”ê°€
+
+        # server ¸Ş´º¿¡ Ãß°¡
         server.Append(201, "&Send", "Send a file to server")
         server.Append(202, "&Receive", "Recive a file from server")
 
-        # help ë©”ë‰´ì— ì¶”ê°€
+        # help ¸Ş´º¿¡ Ãß°¡
         help.Append(301, "&Help", "How to use")
         help.AppendSeparator()
         help.Append(302, "&Developer", "People to develop")
 
-        # ë©”ë‰´ë°”ì— ìƒì„±í•œ ë©”ë‰´ ì¶”ê°€
+        # edit ¸Ş´º¿¡ Ãß°¡
+        edit.Append(401, "&RGB", "Change an image")
+
+        # ¸Ş´º¹Ù¿¡ »ı¼ºÇÑ ¸Ş´º Ãß°¡
         menuBar.Append(file, "&File")
         menuBar.Append(server, "&Server")
         menuBar.Append(help, "&Help")
+        menuBar.Append(edit, "&Edit")
 
-        # í”„ë ˆì„ì— ë©”ë‰´ë°” ì„¸íŒ…
+        # ÇÁ·¹ÀÓ¿¡ ¸Ş´º¹Ù ¼¼ÆÃ
         self.SetMenuBar(menuBar)
 
-        # ë©”ë‰´ë³„ ì´ë²¤íŠ¸ í•¨ìˆ˜ ì—°ê²°
+        # ¸Ş´ºº° ÀÌº¥Æ® ÇÔ¼ö ¿¬°á
         self.Bind(wx.EVT_MENU, self.openFile, id = 101)
         self.Bind(wx.EVT_MENU, self.saveFile, id = 102)
-        self.Bind(wx.EVT_MENU, self.editFile, id = 103)
 
         self.Bind(wx.EVT_MENU, self.sendFile, id = 201)
         self.Bind(wx.EVT_MENU, self.recvFile, id = 202)
@@ -65,8 +56,10 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.helpp, id = 301)
         self.Bind(wx.EVT_MENU, self.info, id = 302)
 
+        self.Bind(wx.EVT_MENU, self.rgb, id = 401)
+
 #----------------------------------------------------------------------------------------------------------
-# file ë©”ë‰´
+# file ¸Ş´º
         
     wildcard = "pictures (*.jpeg,*.jpg)|*.jpeg;*.jpg"
     
@@ -74,14 +67,14 @@ class MyFrame(wx.Frame):
         dlg = wx.FileDialog(self, "Choose a image", os.getcwd(), "", self.wildcard , wx.OPEN)
 
         if dlg.ShowModal() == wx.ID_OK:
-            # íŒŒì¼ì˜ ê²½ë¡œì™€ ì´ë¦„ì„ ì–»ì–´ì˜´
+            # ÆÄÀÏÀÇ °æ·Î¿Í ÀÌ¸§À» ¾ò¾î¿È
             self.imgPath = dlg.GetPath()
             self.imgName = os.path.basename(self.imgPath)
 
             self.img = imgProcess.imgRead(self.imgPath)
             self.haveImg = True
 
-            # panel ìƒì„± í›„ ê·¸ ìœ„ì— image ì¶œë ¥
+            # panel »ı¼º ÈÄ ±× À§¿¡ image Ãâ·Â
             panel = wx.Panel(self, -1, (0, 0), (1000, 800), style = wx.SUNKEN_BORDER)
             picture = wx.StaticBitmap(panel)
             picture.SetFocus()
@@ -99,7 +92,7 @@ class MyFrame(wx.Frame):
             imgProcess.imgSave(imgPath, self.img)
 
         dlg.Destroy()
-        
+            
     def resize(self, bitmap, width, height):
         image = wx.ImageFromBitmap(bitmap)
         image = image.Scale(width, height, wx.IMAGE_QUALITY_HIGH)
@@ -107,29 +100,23 @@ class MyFrame(wx.Frame):
 
         return result
 
-    def editFile(self, event):
-        pass
-
 #----------------------------------------------------------------------------------------------------------
-# server ë©”ë‰´
+# server ¸Ş´º
 
     def sendFile(self, event):
         cli = client.Client()
 
         if cli.isConnect:
-
             if self.haveImg:
-                cli.dataSend(self.img, self.imgName)
+                cli.imgSend(self.img, self.imgName)
                 dlg = wx.MessageDialog(self, "A file is succesfuly sended.", "SUCCES", wx.OK | wx.ICON_INFORMATION)
                 dlg.ShowModal()
                 dlg.Destroy()
 
             else:
-                dlg = wx.MessageDialog(self, "You have to open a image file.", "Not image", wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.imgError()
 
-        # ì„œë²„ ì—°ê²°ì´ ì•ˆë  ë•Œì˜ ì²˜ë¦¬
+        # ¼­¹ö ¿¬°áÀÌ ¾ÈµÉ ¶§ÀÇ Ã³¸®
         else:
             dlg = wx.MessageDialog(self, "Client is not connecting Server.", "ERROR", wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
@@ -138,22 +125,103 @@ class MyFrame(wx.Frame):
         del cli
 
     def recvFile(self, event):
-        pass
+        cli = client.Client()
+
+        if cli.isConnect:
+            cli.dataSend("request*dir")
+            dir = cli.dataRecv()
+
+            dlg = wx.TextEntryDialog(self, dir)
+            dlg.SetValue("Input a file name.")
+
+            if dlg.ShowModal() == wx.ID_OK:
+                self.imgName = dlg.GetValue()
+                
+                cli.dataSend("request*" + self.imgName)
+                self.imgStr = cli.dataRecv()
+                self.img = imgProcess.imgDecode(self.imgStr)
+
+                self.haveImg = True
+
+                self.imgShow(self.img, "")
+            
+
+        else:
+            dlg = wx.MessageDialog(self, "Client is not connecting Server.", "ERROR", wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        del cli
     
 #----------------------------------------------------------------------------------------------------------
-# help ë©”ë‰´
+# help ¸Ş´º
 
     def helpp(self, event):
-        dlg = wx.MessageDialog(self, "ê°“-ì„ì¤€ì„ ì„¸ ë²ˆ ì™¸ì¹œ í›„ ë„ì›€ì„ ìš”ì²­í•œë‹¤.", "Help", wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, "°«-¼®ÁØÀ» ¼¼ ¹ø ¿ÜÄ£ ÈÄ µµ¿òÀ» ¿äÃ»ÇÑ´Ù.", "Help", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
 
     def info(self, event):
-        dlg = wx.MessageDialog(self, "<ë§Œë“  ì‚¬ëŒ>\nì—¼ì„ì¤€, ì„œê²½ë¯¼, ì–‘í˜„", "Info", wx.OK | wx.ICON_INFORMATION)
+        dlg = wx.MessageDialog(self, "<¸¸µç »ç¶÷>\n¿°¼®ÁØ, ¼­°æ¹Î, ¾çÇö", "Info", wx.OK | wx.ICON_INFORMATION)
         dlg.ShowModal()
         dlg.Destroy()
         
 #----------------------------------------------------------------------------------------------------------
+# edit ¸Ş´º
+
+    def rgb(self, event):
+        if not self.haveImg:
+            self.imgError()
+
+        else:
+            dlg = RGBdlg(None, -1, "RGB")
+            dlg.ShowModal()
+            dlg.Destroy()
+
+            self.img = imgEdit.colorChange(self.img, dlg.getValue())
+            self.imgShow(self.img, "rgb_")
+
+    def imgShow(self, img, str):
+        path = "image/" + str + self.imgName
+        imgProcess.imgSave(path, img)
+        
+        panel = wx.Panel(self, -1, (0, 0), (1000, 800), style = wx.SUNKEN_BORDER)
+        picture = wx.StaticBitmap(panel)
+        picture.SetFocus()
+        picture.SetBitmap(self.resize(wx.Bitmap(path), 1000, 800))
+
+    def imgError(self):
+        dlg = wx.MessageDialog(self, "You have to open a image file.", "Not image", wx.OK | wx.ICON_INFORMATION)
+        dlg.ShowModal()
+        dlg.Destroy()
+
+#----------------------------------------------------------------------------------------------------------
+
+class RGBdlg(wx.Dialog):
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title, size = (200, 150))
+
+        wx.StaticText(self, -1, 'Red', (15, 15))
+        self.red = wx.SpinCtrl(self, -1, '1', (55, 10), (60, -1), min = -255, max = 255)
+        
+        wx.StaticText(self, -1, 'Green', (15, 40))
+        self.green = wx.SpinCtrl(self, -1, '1', (55, 35), (60, -1), min = -255, max = 255)
+        
+        wx.StaticText(self, -1, 'Blue', (15, 65))
+        self.blue = wx.SpinCtrl(self, -1, '1', (55, 60), (60, -1), min = -255, max = 255)
+        
+        cl = wx.Button(self, 1, 'Ok', (70, 90), (60, -1))
+
+        cl.Bind(wx.EVT_BUTTON, self.OnClose)
+
+    def OnClose(self, event):
+        self.Close(True)
+
+    def getValue(self):
+        tu = (self.red.GetValue(), self.green.GetValue(), self.blue.GetValue())
+
+        return tu
+        
 class MyApp(wx.App):
     def OnInit(self):
         myframe = MyFrame(None, -1, "")
@@ -163,14 +231,3 @@ class MyApp(wx.App):
 
 app = MyApp(0)
 app.MainLoop()
-
-        dlg.Destroy()
-        
-        if result == wx.ID_OK:
-            self.Destroy()
-            
-if __name__ == "__main__":
-    app = wx.App(redirect = True)
-    top = Frame("Hello World")
-    top.Show()
-    app.MainLoop()
