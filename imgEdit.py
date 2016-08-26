@@ -25,3 +25,6 @@ def colorChange(img, value):
         color += 1
 
     return img
+
+def edge(img):
+    return cv2.Canny(img, 100, 200)

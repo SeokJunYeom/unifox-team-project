@@ -35,7 +35,8 @@ class MyFrame(wx.Frame):
         help.Append(302, "&Developer", "People to develop")
 
         # edit 메뉴에 추가
-        edit.Append(401, "&RGB", "Change an image")
+        edit.Append(401, "&RGB", "Change RGB in image")
+        edit.Append(402, "&EDGE", "Shows only edge")
 
         # 메뉴바에 생성한 메뉴 추가
         menuBar.Append(file, "&File")
@@ -57,6 +58,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.info, id = 302)
 
         self.Bind(wx.EVT_MENU, self.rgb, id = 401)
+        self.Bind(wx.EVT_MENU, self.edge, id = 402)
 
 #----------------------------------------------------------------------------------------------------------
 # file 메뉴
@@ -180,6 +182,14 @@ class MyFrame(wx.Frame):
 
             self.img = imgEdit.colorChange(self.img, dlg.getValue())
             self.imgShow(self.img, "rgb_")
+
+    def edge(self, event):
+        if not self.haveImg:
+            self.imgError()
+
+        else:
+            self.img = imgEdit.edge(self.img)
+            self.imgShow(self.img, "edge_")
 
     def imgShow(self, img, str):
         path = "image/" + str + self.imgName
